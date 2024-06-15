@@ -13,12 +13,6 @@ const Quiz = () => {
   const [result, setResult] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [timer, setTimer] = useState(() => {
-    const startTime = localStorage.getItem("quizStartTime");
-    if (startTime) {
-      const elapsedTime = Math.floor((Date.now() - parseInt(startTime, 10)) / 1000);
-      const remainingTime = 600 - elapsedTime; // 10 minutes in seconds
-      return remainingTime > 0 ? remainingTime : 0;
-    }
     return 600; // 10 minutes in seconds
   });
 
@@ -44,6 +38,28 @@ const Quiz = () => {
   }, [index]);
 
   useEffect(() => {
+    startTimer();
+    return () => clearInterval(intervalId);
+  }, []);
+
+  const handleFullscreenChange = () => {
+    setIsFullscreen(!!document.fullscreenElement);
+  };
+
+  const startQuiz = () => {
+    const quizContainer = document.querySelector(".container");
+    if (quizContainer) {
+      if (!document.fullscreenElement) {
+        quizContainer
+          .requestFullscreen()
+          .catch((err) => alert(`Error: ${err.message}`));
+      }
+    } else {
+      alert("Quiz container not found.");
+    }
+  };
+
+  const startTimer = () => {
     const startTime = localStorage.getItem("quizStartTime");
     let startTimestamp;
 
@@ -66,25 +82,6 @@ const Quiz = () => {
     }, 1000);
 
     setIntervalId(timerInterval);
-
-    return () => clearInterval(timerInterval);
-  }, []);
-
-  const handleFullscreenChange = () => {
-    setIsFullscreen(!!document.fullscreenElement);
-  };
-
-  const startQuiz = () => {
-    const quizContainer = document.querySelector(".container");
-    if (quizContainer) {
-      if (!document.fullscreenElement) {
-        quizContainer
-          .requestFullscreen()
-          .catch((err) => alert(`Error: ${err.message}`));
-      }
-    } else {
-      alert("Quiz container not found.");
-    }
   };
 
   const checkAns = (e, answer) => {
@@ -135,22 +132,7 @@ const Quiz = () => {
     if (intervalId) {
       clearInterval(intervalId);
     }
-
-    const startTimestamp = Date.now();
-    localStorage.setItem("quizStartTime", startTimestamp.toString());
-
-    const timerInterval = setInterval(() => {
-      const elapsedTime = Math.floor((Date.now() - startTimestamp) / 1000);
-      const remainingTime = 600 - elapsedTime;
-      if (remainingTime > 0) {
-        setTimer(remainingTime);
-      } else {
-        clearInterval(timerInterval);
-        endQuiz();
-      }
-    }, 1000);
-
-    setIntervalId(timerInterval);
+    startTimer();
   };
 
   const formatTime = (seconds) => {
